@@ -9,8 +9,8 @@ public class Record {
 	private String E;
 	private String F;
 	private String G;
-	private Integer H;
-	private Integer I;
+	private String H;
+	private String I;
 	private String J;
 	
 	public String getA() {
@@ -55,25 +55,25 @@ public class Record {
 	public void setG(String g) {
 		G = g;
 	}
-	public Integer getH() {
-		return H;
+	public int getH() {
+		if (H.equals("TRUE")) {
+			return 1;
+		} else {
+			return 0;
+		}
 	}
 	public void setH(String h) {
-		if (h.equals("TRUE")) {
-			H = 1;
-		} else if (h.equals("FALSE")) {
-			H = 0;
-		}
+		H = h;
 	}
-	public Integer getI() {
-		return I;
+	public int getI() {
+		if (I.equals("TRUE")) {
+			return 1;
+		} else {
+			return 0;
+		}
 	}
 	public void setI(String i) {
-		if (i.equals("TRUE")) {
-			I = 1;
-		} else if (i.equals("FALSE")) {
-			I = 0;
-		}
+		I = i;
 	}
 	public String getJ() {
 		return J;
@@ -83,10 +83,10 @@ public class Record {
 	}
 	
 	public boolean isValid() {
-		if (!(A.isEmpty() && B.isEmpty() && C.isEmpty() && D.isEmpty() && E.isEmpty() && F.isEmpty() && G.isEmpty() && H == null && I == null && J.isEmpty())) {
-			return true;
-		} else {
+		if (A.isEmpty() || B.isEmpty() || C.isEmpty() || D.isEmpty() || E.isEmpty() || F.isEmpty() || G.isEmpty() || H.isEmpty() || I.isEmpty() || J.isEmpty()) {
 			return false;
+		} else {
+			return true;
 		}
 	}
 
