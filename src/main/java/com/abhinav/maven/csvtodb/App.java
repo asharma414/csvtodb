@@ -1,5 +1,6 @@
 package com.abhinav.maven.csvtodb;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.Iterable;
@@ -7,15 +8,16 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 
 
 import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
 
 /**
@@ -27,8 +29,10 @@ public class App
     public static void main( String[] args ) throws URISyntaxException, SQLException
     {
     	try {
-    	Reader reader = Files.newBufferedReader(Paths.get(App.class.getResource("/ms3interview.csv").toURI()));
-
+//    	Reader reader = Files.newBufferedReader(Paths.get(App.class.getResource("/ms3interview.csv").toURI()));
+    	Reader reader = Files.newBufferedReader(Paths.get(args[0]));
+    	CSVPrinter printer = new CSVPrinter(new FileWriter("ms3interview-bad.csv"), CSVFormat.EXCEL);
+    	printer.printRecord("A", "B", "C", "D", "E", "F", "G", "H", "I", "J");
         // read csv file
         Iterable<CSVRecord> records = CSVFormat.DEFAULT.parse(reader);
         ArrayList<Record> data = new ArrayList<Record>();
@@ -44,32 +48,40 @@ public class App
         	rec.setH(record.get(7));
         	rec.setI(record.get(8));
         	rec.setJ(record.get(9));
+        	if (!rec.isValid()) {
+        		 try  {
+        		     printer.printRecord(record.get(0), record.get(1), record.get(2), record.get(3), record.get(4), record.get(5), record.get(6), record.get(7), record.get(8), record.get(9));
+        		 } catch (IOException ex) {
+        		     ex.printStackTrace();
+        		 }
+        	}
         	data.add(rec);
         }
         // close the reader
         reader.close();
-        PreparedStatement statement = null;
-        Connection con = connect();
-        String sql = "INSERT INTO records(A, B, C, D, E, F, G, H, I, J) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-        statement = con.prepareStatement(sql);
-        for (Record rec : data) {
-        	if (rec.isValid()) {
-        		statement.setString(1, rec.getA());
-        		statement.setString(2, rec.getB());
-        		statement.setString(3, rec.getC());
-        		statement.setString(4, rec.getD());
-        		statement.setString(5, rec.getE());
-        		statement.setString(6, rec.getF());
-        		statement.setString(7, rec.getG());
-        		statement.setInt(8, rec.getH());
-        		statement.setInt(9, rec.getI());
-        		statement.setString(10, rec.getJ());
-        		statement.addBatch();
-        	}
-        }
-        statement.executeBatch();
-        con.commit();
-        con.close();
+        printer.close();
+//        PreparedStatement statement = null;
+//        Connection con = connect();
+//        String sql = "INSERT INTO records(A, B, C, D, E, F, G, H, I, J) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+//        statement = con.prepareStatement(sql);
+//        for (Record rec : data) {
+//        	if (rec.isValid()) {
+//        		statement.setString(1, rec.getA());
+//        		statement.setString(2, rec.getB());
+//        		statement.setString(3, rec.getC());
+//        		statement.setString(4, rec.getD());
+//        		statement.setString(5, rec.getE());
+//        		statement.setString(6, rec.getF());
+//        		statement.setString(7, rec.getG());
+//        		statement.setInt(8, rec.getH());
+//        		statement.setInt(9, rec.getI());
+//        		statement.setString(10, rec.getJ());
+//        		statement.addBatch();
+//        	}
+//        }
+//        statement.executeBatch();
+//        con.commit();
+//        con.close();
 
 
 	    } catch (IOException ex) {
@@ -77,13 +89,28 @@ public class App
 	    }
     }
     
-    public static Connection connect() {
+    public static Connection connect(String dbName) {
         Connection conn = null;
         try {
             // db parameters
-            String url = "jdbc:sqlite:csvdata.db";
+            String url = "jdbc:sqlite:" + dbName + ".db";
+            String sql = "CREATE TABLE IF NOT EXISTS records (\n"
+            		+ "	A	TEXT NOT NULL,\n"
+            		+ "	B	TEXT NOT NULL,\n"
+            		+ "	C	TEXT NOT NULL,\n"
+            		+ "	D	TEXT NOT NULL,\n"
+            		+ "	E	TEXT NOT NULL,\n"
+            		+ "	F	TEXT NOT NULL,\n"
+            		+ "	G	TEXT NOT NULL,\n"
+            		+ "	H	INTEGER NOT NULL,\n"
+            		+ "	I	INTEGER NOT NULL,\n"
+            		+ "	J	TEXT NOT NULL\n"
+            		+ ");";
             // create a connection to the database
             conn = DriverManager.getConnection(url);
+            Statement stmt = conn.createStatement();
+                // create a new table
+            stmt.execute(sql);
             conn.setAutoCommit(false);
             System.out.println("Connection to SQLite has been established.");
             
@@ -102,4 +129,5 @@ public class App
 //            }
 //        }
     }
+    
 }

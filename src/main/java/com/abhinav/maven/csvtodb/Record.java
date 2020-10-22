@@ -9,8 +9,8 @@ public class Record {
 	private String E;
 	private String F;
 	private String G;
-	private String H;
-	private String I;
+	public String H;
+	public String I;
 	private String J;
 	
 	public String getA() {
@@ -56,7 +56,7 @@ public class Record {
 		G = g;
 	}
 	public int getH() {
-		if (H.equals("TRUE")) {
+		if (H.equals("true")) {
 			return 1;
 		} else {
 			return 0;
@@ -66,7 +66,7 @@ public class Record {
 		H = h;
 	}
 	public int getI() {
-		if (I.equals("TRUE")) {
+		if (I.equals("true")) {
 			return 1;
 		} else {
 			return 0;
