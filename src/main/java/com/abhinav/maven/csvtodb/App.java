@@ -6,19 +6,22 @@ import java.io.Reader;
 import java.lang.Iterable;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-
+import java.util.logging.FileHandler;
+import java.util.logging.Logger;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.io.FilenameUtils;
+
 
 /**
  * Hello world!
@@ -29,12 +32,18 @@ public class App
     public static void main( String[] args ) throws URISyntaxException, SQLException
     {
     	try {
-//    	Reader reader = Files.newBufferedReader(Paths.get(App.class.getResource("/ms3interview.csv").toURI()));
-    	Reader reader = Files.newBufferedReader(Paths.get(args[0]));
-    	CSVPrinter printer = new CSVPrinter(new FileWriter("ms3interview-bad.csv"), CSVFormat.EXCEL);
+    	Path inputPath = Paths.get(args[0]);
+    	String file = inputPath.getFileName().toString();
+    	String fileName = FilenameUtils.removeExtension(file);
+    	Logger logger = Logger.getLogger("MyLog");
+    	FileHandler fh;
+    	fh = new FileHandler("./" + fileName + ".log");
+        logger.addHandler(fh);
+    	Reader reader = Files.newBufferedReader(inputPath);
+    	CSVPrinter printer = new CSVPrinter(new FileWriter("./" + fileName + "-bad.csv"), CSVFormat.EXCEL);
     	printer.printRecord("A", "B", "C", "D", "E", "F", "G", "H", "I", "J");
         // read csv file
-        Iterable<CSVRecord> records = CSVFormat.DEFAULT.parse(reader);
+        Iterable<CSVRecord> records = CSVFormat.DEFAULT.withFirstRecordAsHeader().parse(reader);
         ArrayList<Record> data = new ArrayList<Record>();
         for (CSVRecord record : records) {
         	Record rec = new Record();
@@ -48,41 +57,46 @@ public class App
         	rec.setH(record.get(7));
         	rec.setI(record.get(8));
         	rec.setJ(record.get(9));
-        	if (!rec.isValid()) {
-        		 try  {
-        		     printer.printRecord(record.get(0), record.get(1), record.get(2), record.get(3), record.get(4), record.get(5), record.get(6), record.get(7), record.get(8), record.get(9));
-        		 } catch (IOException ex) {
-        		     ex.printStackTrace();
-        		 }
-        	}
         	data.add(rec);
         }
+        logger.info("Records received: " + Integer.toString(data.size()));
         // close the reader
         reader.close();
+        int validCount = 0;
+        int invalidCount = 0;
+        PreparedStatement statement = null;
+        Connection con = connect(fileName);
+        String sql = "INSERT INTO records(A, B, C, D, E, F, G, H, I, J) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        statement = con.prepareStatement(sql);
+        for (Record rec : data) {
+        	if (rec.isValid()) {
+        		statement.setString(1, rec.getA());
+        		statement.setString(2, rec.getB());
+        		statement.setString(3, rec.getC());
+        		statement.setString(4, rec.getD());
+        		statement.setString(5, rec.getE());
+        		statement.setString(6, rec.getF());
+        		statement.setString(7, rec.getG());
+        		statement.setInt(8, rec.getH());
+        		statement.setInt(9, rec.getI());
+        		statement.setString(10, rec.getJ());
+        		statement.addBatch();
+        		validCount++;
+        	} else {
+	       		 try  {
+	       		     printer.printRecord(rec.getA(), rec.getB(), rec.getC(), rec.getD(), rec.getE(), rec.getF(), rec.getG(), rec.toString(rec.getH()), rec.toString(rec.getI()), rec.getJ());
+	       		     invalidCount++;
+	       		 } catch (IOException ex) {
+	       		     ex.printStackTrace();
+	       		 }
+        	}
+        }
         printer.close();
-//        PreparedStatement statement = null;
-//        Connection con = connect();
-//        String sql = "INSERT INTO records(A, B, C, D, E, F, G, H, I, J) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-//        statement = con.prepareStatement(sql);
-//        for (Record rec : data) {
-//        	if (rec.isValid()) {
-//        		statement.setString(1, rec.getA());
-//        		statement.setString(2, rec.getB());
-//        		statement.setString(3, rec.getC());
-//        		statement.setString(4, rec.getD());
-//        		statement.setString(5, rec.getE());
-//        		statement.setString(6, rec.getF());
-//        		statement.setString(7, rec.getG());
-//        		statement.setInt(8, rec.getH());
-//        		statement.setInt(9, rec.getI());
-//        		statement.setString(10, rec.getJ());
-//        		statement.addBatch();
-//        	}
-//        }
-//        statement.executeBatch();
-//        con.commit();
-//        con.close();
-
+        statement.executeBatch();
+        con.commit();
+        logger.info("Records successful: " + Integer.toString(validCount));
+        logger.info("Records failed: " + Integer.toString(invalidCount));
+        con.close();
 
 	    } catch (IOException ex) {
 	        ex.printStackTrace();
@@ -93,7 +107,7 @@ public class App
         Connection conn = null;
         try {
             // db parameters
-            String url = "jdbc:sqlite:" + dbName + ".db";
+            String url = "jdbc:sqlite:" + "./" + dbName + ".db";
             String sql = "CREATE TABLE IF NOT EXISTS records (\n"
             		+ "	A	TEXT NOT NULL,\n"
             		+ "	B	TEXT NOT NULL,\n"

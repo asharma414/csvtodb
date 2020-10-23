@@ -58,9 +58,9 @@ public class Record {
 	public int getH() {
 		if (H.equals("true")) {
 			return 1;
-		} else {
+		} else if (H.equals("false")) {
 			return 0;
-		}
+		} else return -1;
 	}
 	public void setH(String h) {
 		H = h;
@@ -68,9 +68,16 @@ public class Record {
 	public int getI() {
 		if (I.equals("true")) {
 			return 1;
-		} else {
+		} else if (I.equals("false")) {
 			return 0;
-		}
+		} else return -1;
+	}
+	public String toString(int bool) {
+		if (bool == 1) {
+			return "TRUE";
+		} else if (bool == 0) {
+			return "FALSE";
+		} else return "";
 	}
 	public void setI(String i) {
 		I = i;
@@ -81,7 +88,6 @@ public class Record {
 	public void setJ(String j) {
 		J = j;
 	}
-	
 	public boolean isValid() {
 		if (A.isEmpty() || B.isEmpty() || C.isEmpty() || D.isEmpty() || E.isEmpty() || F.isEmpty() || G.isEmpty() || H.isEmpty() || I.isEmpty() || J.isEmpty()) {
 			return false;
